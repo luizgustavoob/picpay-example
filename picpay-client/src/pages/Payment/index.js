@@ -21,30 +21,40 @@ const Payment = ( {setLoading} ) => {
   const [statusPayment, setStatusPayment] = useState('Nenhum Pagamento Gerado');
   const [styleStatus, setStyleStatus] = useState(classes.textNormal);
   
-  const handleSubmit = values => {
+  const handleSubmit = async values => {
     setLoading(true);
-
-    let formattedPhone = values.phone;
-    formattedPhone = `+55 ${formattedPhone.replace('(', '').replace(')', '').replace('-', ' ')}`;
-
+    const formattedPhone = `+55 ${values.phone.replace('(', '').replace(')', '').replace('-', ' ')}`;
     const payment = {...values, referenceId: uuid(), phone: formattedPhone };
   
-    postPayment(payment)
-      .then(res => {
-        const referenceId = res.referenceId;
-        toast.success(`Compra ${referenceId} gerada com sucesso.`);
-        setQrCode(res.qrCode);
-        setStatusPayment(res.statusPayment);
-        subscribe(`/queue/${referenceId}`, status => {
-          if (status.body === 'paid') {
-            setStatusPayment('Obaa! Pagamento Realizado.');
-            setStyleStatus(classes.textBold);
-            unsubscribe(`/queue/${referenceId}`);
-          }
-        });
-      })
-    .catch(err => toast.error(`Erro na geração da compra: ${err}`))
-    .finally(() => setLoading(false));
+    try {
+      const response = await postPayment(payment);      
+      toast.success(`Compra ${response.referenceId} gerada com sucesso.`);
+      
+      setQrCode(response.qrCode);
+      setStatusPayment(response.statusPayment);
+      subscribe(`/queue/${response.referenceId}`, status => {
+        if (status.body === 'paid') {
+          setStatusPayment('Obaa! Pagamento Realizado.');
+          setStyleStatus(classes.textBold);
+          unsubscribe(`/queue/${response.referenceId}`);
+        }
+      });
+    } catch(err) {
+      toast.error(`Erro na geração da compra: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validationSchema = () => {
+    return Yup.object().shape({
+      firstName: Yup.string().required('Informe o nome do comprador'),
+      lastName: Yup.string().required('Informe o sobrenome do comprador'),
+      document: Yup.string().required('Informe o documento do comprador'),
+      email: Yup.string().email('E-mail inválido').required('Informe o e-mail do comprador'),
+      phone: Yup.string().required('Informe o telefone do comprador'),
+      value: Yup.number().min(0.01, 'Informe um valor válido').required('Informe o valor da compra')
+    });
   };
 
   const resetBuyer = formik => {
@@ -60,14 +70,7 @@ const Payment = ( {setLoading} ) => {
         <Formik 
           initialValues={{firstName: '', lastName: '', document: '', email: '', phone: '', value: 0.0}} 
           onSubmit={values => handleSubmit(values)} 
-          validationSchema={Yup.object().shape({
-            firstName: Yup.string().required('Informe o nome do comprador'),
-            lastName: Yup.string().required('Informe o sobrenome do comprador'),
-            document: Yup.string().required('Informe o documento do comprador'),
-            email: Yup.string().email('E-mail inválido').required('Informe o e-mail do comprador'),
-            phone: Yup.string().required('Informe o telefone do comprador'),
-            value: Yup.number().min(0.01, 'Informe um valor válido').required('Informe o valor da compra')
-          })}> 
+          validationSchema={validationSchema}> 
           { ( {formik, errors, touched} ) => (
             <Form autoComplete="off">
               <Typography variant="h5" style={{padding: '5px'}}>Comprador</Typography>
@@ -164,7 +167,7 @@ const Payment = ( {setLoading} ) => {
 };
 
 const mapStateToProps = state => {
-  return { isLoading: state.isLoading };
-};
+  return { isLoading: state.loading };
+}
 
 export default connect(mapStateToProps, {setLoading})(Payment);
