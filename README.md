@@ -12,6 +12,8 @@ Este repositório contém uma proposta de projeto para consumo da API do PicPay.
 * [Material UI](https://material-ui.com/)
 * [Redux](https://redux.js.org/)
 * [React Redux](https://react-redux.js.org/)
+* [Formik](https://jaredpalmer.com/formik/docs/overview)
+* [Yup](https://github.com/jquense/yup)
 * [Axios](https://github.com/axios/axios)
 
 ## Execução
