@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import { Typography, TextField, Divider, Button, Grid, Box } from '@material-ui/core';
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import { v4 as uuid } from 'uuid';
 import MoneyField from '../../components/MoneyField';
@@ -15,35 +17,18 @@ const Payment = ( {setLoading} ) => {
 
   const classes = useStyles();
 
-  const inputFirstName = useRef(null);
-  const inputLastName = useRef(null);
-  const inputDocument = useRef(null);
-  const inputEmail = useRef(null);
-  const inputPhone = useRef(null);  
-  const [valuePayment, setValuePayment] = useState(0);
   const [qrCode, setQrCode] = useState(QRCodeWhite);
   const [statusPayment, setStatusPayment] = useState('Nenhum Pagamento Gerado');
   const [styleStatus, setStyleStatus] = useState(classes.textNormal);
-
-  const handleSave = e => {
-    e.preventDefault();
+  
+  const handleSubmit = values => {
     setLoading(true);
 
-    const referenceId = uuid();
-    const phone = inputPhone.current.value ? 
-      `+55 ${inputPhone.current.value.replace('(', '').replace(')', '').replace('-', ' ')}`
-      : '';  
+    let formattedPhone = values.phone;
+    formattedPhone = `+55 ${formattedPhone.replace('(', '').replace(')', '').replace('-', ' ')}`;
 
-    const payment = {
-      referenceId,
-      value: valuePayment,
-      firstName: inputFirstName.current.value,
-      lastName: inputLastName.current.value,
-      document: inputDocument.current.value,
-      email: inputEmail.current.value,
-      phone: phone
-    };
-
+    const payment = {...values, referenceId: uuid(), phone: formattedPhone };
+  
     postPayment(payment)
       .then(res => {
         const referenceId = res.referenceId;
@@ -62,66 +47,110 @@ const Payment = ( {setLoading} ) => {
     .finally(() => setLoading(false));
   };
 
-  const resetBuyer = () => {
-    inputFirstName.current.value = '';
-    inputLastName.current.value = '';
-    inputDocument.current.value = '';
-    inputEmail.current.value = '';
-    inputPhone.current.value = '';
-    setValuePayment(0);
+  const resetBuyer = formik => {
+    formik.resetForm();
     setQrCode(QRCodeWhite);
     setStatusPayment('Nenhum Pagamento Gerado');
     setStyleStatus(classes.textNormal);
   };
 
-  const handleChangeMoney = e => setValuePayment(e.target.value);
-
   return (
     <Grid container>
       <Grid item xs={12} sm={12} md={8} lg={8} xl={8}>
-        <form onSubmit={handleSave} autoComplete="off">
-          <Typography variant="h5" style={{padding: '5px'}}>Comprador</Typography>
+        <Formik 
+          initialValues={{firstName: '', lastName: '', document: '', email: '', phone: '', value: 0.0}} 
+          onSubmit={values => handleSubmit(values)} 
+          validationSchema={Yup.object().shape({
+            firstName: Yup.string().required('Informe o nome do comprador'),
+            lastName: Yup.string().required('Informe o sobrenome do comprador'),
+            document: Yup.string().required('Informe o documento do comprador'),
+            email: Yup.string().email('E-mail inválido').required('Informe o e-mail do comprador'),
+            phone: Yup.string().required('Informe o telefone do comprador'),
+            value: Yup.number().min(0.01, 'Informe um valor válido').required('Informe o valor da compra')
+          })}> 
+          { ( {formik, errors, touched} ) => (
+            <Form autoComplete="off">
+              <Typography variant="h5" style={{padding: '5px'}}>Comprador</Typography>
+              
+              <Grid container spacing={1} >
+                <Grid item xs={12} sm={12} md={5} lg={5} xl={5}>
+                  <Field name="firstName">
+                    { ( {field} ) => (                        
+                        <TextField {...field} label="Nome" margin="normal" fullWidth 
+                          variant="outlined" InputLabelProps={{shrink: true}} 
+                          helperText={touched.firstName && errors.firstName ? errors.firstName : ''} />
+                      ) }
+                  </Field>
+                </Grid>
 
-          <Grid container spacing={1} >
-            <Grid item xs={12} sm={12} md={5} lg={5} xl={5} >
-              <TextField inputRef={inputFirstName} id="firstName" label="Nome" margin="normal" fullWidth 
-                variant="outlined" InputLabelProps={{shrink: true}} required />
-            </Grid>
-            <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
-              <TextField inputRef={inputLastName} id="lastName" label="Sobrenome" margin="normal" fullWidth 
-                variant="outlined" InputLabelProps={{shrink: true}} required />
-            </Grid>
-            <Grid item xs={12} sm={12} md={3} lg={3} xl={3} >
-              <TextField inputRef={inputDocument} id="document" label="Documento" margin="normal" fullWidth 
-                variant="outlined" InputLabelProps={{shrink: true}} required />
-            </Grid>
-          </Grid>
+                <Grid item xs={12} sm={12} md={4} lg={4} xl={4}>
+                  <Field name="lastName">
+                    { ( {field} ) => (
+                        <TextField {...field} label="Sobrenome" margin="normal" fullWidth
+                          variant="outlined" InputLabelProps={{shrink: true}}
+                          helperText={touched.lastName && errors.lastName ? errors.lastName : ''} />
+                      ) }
+                  </Field>
+                </Grid>
 
-          <Grid container spacing={1} >
-            <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
-              <TextField inputRef={inputEmail} id="email" label="E-mail" type="email" margin="normal" fullWidth 
-                variant="outlined" InputLabelProps={{shrink: true}} required />
-            </Grid>
-            <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >          
-              <TextField inputRef={inputPhone} id="phone" label="Telefone" margin="normal" fullWidth variant="outlined" 
-                InputLabelProps={{shrink: true}} InputProps={{ inputComponent: PhoneField}} required />
-            </Grid>
-            <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
-              <TextField id="value" name="value" value={valuePayment} label="Valor" margin="normal" fullWidth variant="outlined" 
-                onChange={handleChangeMoney} InputLabelProps={{shrink: true}} InputProps={{inputComponent: MoneyField }} required min={0.01} />
-            </Grid>
-          </Grid>        
+                <Grid item xs={12} sm={12} md={3} lg={3} xl={3}>
+                  <Field name="document">
+                    { ( {field} ) => (
+                        <TextField {...field} label="Documento" margin="normal" fullWidth 
+                          variant="outlined" InputLabelProps={{shrink: true}} 
+                          helperText={touched.document && errors.document ? errors.document : ''} />
+                      ) }
+                  </Field>
+                </Grid>
+              </Grid>
 
-          <Divider style={{marginTop: '5px', marginBottom: '10px'}} />
+              <Grid container spacing={1}>
+                <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
+                  <Field name="email" >
+                    { ( {field} ) => (
+                        <TextField {...field} label="E-mail" type="email" margin="normal" fullWidth 
+                          variant="outlined" InputLabelProps={{shrink: true}} 
+                          helperText={touched.email && errors.email ? errors.email : ''} />
+                      ) }
+                  </Field>
+                </Grid>
 
-          <Box width="100%" display="flex" justifyContent="flex-end" alignItems="center" style={{marginBottom: '10px'}}>
-            <Button type="submit" variant="contained" color="primary" size="large">Gerar Pagamento</Button>
-            <Button type="button" variant="contained" color="secondary" size="large" style={{marginLeft: '5px'}}
-              onClick={resetBuyer}>Novo Comprador</Button>
-          </Box>
-        </form>
+                <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
+                  <Field name="phone">
+                    { ( {field} ) => (
+                        <TextField {...field} label="Telefone" margin="normal" fullWidth variant="outlined" 
+                          InputLabelProps={{shrink: true}} InputProps={{ inputComponent: PhoneField}} 
+                          helperText={touched.phone && errors.phone ? errors.phone : ''} />
+                      ) }
+                  </Field>
+                </Grid>
+
+                <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
+                  <Field name="value">
+                    { ( {field, form} ) => (
+                        <TextField {...field} id="value" name="value" label="Valor" margin="normal" fullWidth variant="outlined" 
+                          onChange={e => form.setFieldValue('value', e.target.value)} 
+                          InputLabelProps={{shrink: true}} InputProps={{inputComponent: MoneyField }} 
+                          helperText={touched.value && errors.value ? errors.value : ''} />
+                      ) }
+                  </Field>
+                </Grid>
+              </Grid>
+
+              <Divider style={{marginTop: '5px', marginBottom: '10px'}} />
+
+              <Box width="100%" display="flex" justifyContent="flex-end" alignItems="center" style={{marginBottom: '10px'}}>
+                <Button type="submit" variant="contained" color="primary" size="large">Gerar Pagamento</Button>
+
+                <Button type="button" variant="contained" color="secondary" size="large" style={{marginLeft: '5px'}} 
+                  onClick={() => resetBuyer(formik)}>Novo Comprador</Button>
+              </Box>
+            </Form>
+          )
+        }
+        </Formik>
       </Grid>
-
+        
       <Grid item xs={12} sm={12} md={4} lg={4} xl={4} className={classes.qrCode} >
         <figure className={classes.figure}>
           <img className={classes.img} src={qrCode} alt="QRCode" title="QRCode"/>
