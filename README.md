@@ -32,7 +32,7 @@ para que o arquivo **.jar** da API seja gerado. Na sequência, executar o comand
 
 ### Execução - Client
 
-Antes de subir a aplicação, é necessário editar o arquivo *api.js* informando a URL na qual o servidor está rodando. Depois, via terminal, deve-se acessar a pasta *picpay-client* e executar
+Antes de subir a aplicação, é necessário editar os arquivos *api.js* e *web-socket.js* informando a URL na qual o servidor está rodando. Depois, via terminal, deve-se acessar a pasta *picpay-client* e executar
 ```
 npm install
 ``` 
