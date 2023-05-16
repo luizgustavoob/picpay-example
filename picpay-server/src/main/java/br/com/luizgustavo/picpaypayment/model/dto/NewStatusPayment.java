@@ -2,9 +2,6 @@ package br.com.luizgustavo.picpaypayment.model.dto;
 
 import org.json.JSONObject;
 
-import lombok.Data;
-
-@Data
 public class NewStatusPayment {
 
 	private String referenceId;
@@ -14,5 +11,21 @@ public class NewStatusPayment {
 		JSONObject json = new JSONObject(jsonStr);
 		this.referenceId = json.getString("referenceId");
 		this.status = json.getString("status");
+	}
+
+	public String getReferenceId() {
+		return referenceId;
+	}
+
+	public void setReferenceId(String referenceId) {
+		this.referenceId = referenceId;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 }

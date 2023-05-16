@@ -1,19 +1,13 @@
 package br.com.luizgustavo.picpaypayment.model.form;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import br.com.luizgustavo.picpaypayment.model.Buyer;
 import br.com.luizgustavo.picpaypayment.model.Payment;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class PaymentForm {
 
 	@NotNull @NotEmpty @NotBlank
@@ -30,6 +24,22 @@ public class PaymentForm {
 	private String email;
 	@NotNull @NotEmpty @NotBlank
 	private String phone;
+
+	public PaymentForm() {
+		super();
+	}
+
+	public PaymentForm(String referenceId, Double value, String firstName, String lastName,
+		String document, String email, String phone) {
+		super();
+		this.referenceId = referenceId;
+		this.value = value;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.document = document;
+		this.email = email;
+		this.phone = phone;
+	}	
 	
 	public Payment toPayment(String callbackUrl, String returnUrl, Integer minutesForExpiration) {
 		Payment payment = new Payment(minutesForExpiration);
@@ -48,5 +58,6 @@ public class PaymentForm {
 		payment.setBuyer(buyer);
 		
 		return payment;
-	}	
+	}
+	
 }

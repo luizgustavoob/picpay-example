@@ -2,9 +2,6 @@ package br.com.luizgustavo.picpaypayment.model.dto;
 
 import org.json.JSONObject;
 
-import lombok.Data;
-
-@Data
 public class PaymentGenerated {
 	
 	private String referenceId;
@@ -18,5 +15,37 @@ public class PaymentGenerated {
 		this.expiresAt = json.getString("expiresAt");
 		this.qrCode = json.getJSONObject("qrcode").getString("base64");
 		this.statusPayment = "Pagamento Pendente";		
+	}
+
+	public String getReferenceId() {
+		return referenceId;
+	}
+
+	public void setReferenceId(String referenceId) {
+		this.referenceId = referenceId;
+	}
+
+	public String getExpiresAt() {
+		return expiresAt;
+	}
+
+	public void setExpiresAt(String expiresAt) {
+		this.expiresAt = expiresAt;
+	}
+
+	public String getQrCode() {
+		return qrCode;
+	}
+
+	public void setQrCode(String qrCode) {
+		this.qrCode = qrCode;
+	}
+
+	public String getStatusPayment() {
+		return statusPayment;
+	}
+
+	public void setStatusPayment(String statusPayment) {
+		this.statusPayment = statusPayment;
 	}
 }

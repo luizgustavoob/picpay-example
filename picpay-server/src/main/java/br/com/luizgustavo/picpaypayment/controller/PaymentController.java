@@ -1,7 +1,5 @@
 package br.com.luizgustavo.picpaypayment.controller;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -25,6 +23,7 @@ import br.com.luizgustavo.picpaypayment.model.dto.NewStatusPayment;
 import br.com.luizgustavo.picpaypayment.model.dto.PaymentGenerated;
 import br.com.luizgustavo.picpaypayment.model.form.PaymentForm;
 import br.com.luizgustavo.picpaypayment.model.form.StatusChangeForm;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/payment")
@@ -60,7 +59,7 @@ public class PaymentController {
 		
 		RestTemplate restTemplate = new RestTemplate();
 		
-		HttpHeaders headers = new HttpHeaders();		
+		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.add("x-picpay-token", picpayToken);
 		
@@ -90,7 +89,8 @@ public class PaymentController {
 		try {
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);			
 			NewStatusPayment newStatusPayment = new NewStatusPayment(response.getBody());
-			message.convertAndSend(String.format("/queue/%s", newStatusPayment.getReferenceId()), newStatusPayment.getStatus());
+
+			message.convertAndSend(String.format("/payments/%s", newStatusPayment.getReferenceId()), newStatusPayment.getStatus());
 		} catch (Exception ex) {
 			throw new StatusChangeException(ex.getMessage());
 		}

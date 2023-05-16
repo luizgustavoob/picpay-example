@@ -3,9 +3,6 @@ package br.com.luizgustavo.picpaypayment.model;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import lombok.Data;
-
-@Data
 public class Payment {
 
 	private String referenceId;
@@ -20,6 +17,54 @@ public class Payment {
 		this.expiresAt = ZonedDateTime.now().plusMinutes(minutesForExpiration).format(formatter);
 	}
 	
+	public String getReferenceId() {
+		return referenceId;
+	}
+
+	public void setReferenceId(String referenceId) {
+		this.referenceId = referenceId;
+	}
+
+	public String getCallbackUrl() {
+		return callbackUrl;
+	}
+
+	public void setCallbackUrl(String callbackUrl) {
+		this.callbackUrl = callbackUrl;
+	}
+
+	public String getReturnUrl() {
+		return returnUrl;
+	}
+
+	public void setReturnUrl(String returnUrl) {
+		this.returnUrl = returnUrl;
+	}
+
+	public String getExpiresAt() {
+		return expiresAt;
+	}
+
+	public void setExpiresAt(String expiresAt) {
+		this.expiresAt = expiresAt;
+	}
+
+	public Double getValue() {
+		return value;
+	}
+
+	public void setValue(Double value) {
+		this.value = value;
+	}
+
+	public Buyer getBuyer() {
+		return buyer;
+	}
+
+	public void setBuyer(Buyer buyer) {
+		this.buyer = buyer;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();

@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import lombok.Getter;
-
 @RestControllerAdvice
 public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -36,14 +34,20 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	public static class StandardError {
 		
-		@Getter
 		private String userMessage;
-		@Getter
 		private String devMessage;
 
 		public StandardError(String userMessage, String devMessage) {
 			this.userMessage = userMessage;
 			this.devMessage = devMessage;
+		}
+		
+		public String getUserMessage() {
+			return this.userMessage;
+		}
+		
+		public String getDevMessage() {
+			return this.devMessage;
 		}
 	}
 }
