@@ -1,20 +1,17 @@
 import axios from 'axios';
 
-const Api = axios.create({
-  baseURL: ''
+const api = axios.create({
+  baseURL: '<PUT_HERE_THE_SERVER_URL>'
 });
 
-export default Api;
-
-export const postPayment = ( {referenceId, value, firstName, lastName, document, email, phone} ) => {
-
-  return Api.post('/payment', {
+export const postPayment = ({ referenceId, value, firstName, lastName, document, email, phone }) => {
+  return api.post('/payments', {
     referenceId,
     value,
     firstName,
-    lastName, 
-    document, 
-    email, 
+    lastName,
+    document,
+    email,
     phone
   })
   .then(res => res.data);

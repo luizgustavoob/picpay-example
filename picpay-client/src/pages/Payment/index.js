@@ -9,34 +9,42 @@ import MoneyField from '../../components/MoneyField';
 import PhoneField from '../../components/PhoneField';
 import { postPayment } from '../../services/api';
 import { setLoading } from '../../store/actions/loading-action';
-import { subscribe, unsubscribe } from '../../services/web-socket';
+import * as Stomp from 'stompjs';
+import * as SockJS from 'sockjs-client';
 import * as QRCodeWhite from '../../assets/fotos/qrcode-white-sem-fundo.png';
 import useStyles from './styles';
 
-const Payment = ( {setLoading} ) => {
-
+const Payment = ({ setLoading }) => {
   const classes = useStyles();
 
   const [qrCode, setQrCode] = useState(QRCodeWhite);
   const [statusPayment, setStatusPayment] = useState('Nenhum Pagamento Gerado');
   const [styleStatus, setStyleStatus] = useState(classes.textNormal);
-  
+
+  const stompClient = Stomp.over(new SockJS('http://localhost:8080/picpay-payments'))
+  stompClient.connect({}, () => {
+    console.log('WebSocket connected.')
+  }, (err) => {
+    console.log('ERRO', err)
+  })
+
   const handleSubmit = async values => {
     setLoading(true);
     const formattedPhone = `+55 ${values.phone.replace('(', '').replace(')', '').replace('-', ' ')}`;
     const payment = {...values, referenceId: uuid(), phone: formattedPhone };
-  
+
     try {
-      const response = await postPayment(payment);      
+      const response = await postPayment(payment);
       toast.success(`Compra ${response.referenceId} gerada com sucesso.`);
-      
+
       setQrCode(response.qrCode);
       setStatusPayment(response.statusPayment);
-      subscribe(`/queue/${response.referenceId}`, status => {
-        if (status.body === 'paid') {
+
+      stompClient.subscribe(`/payments/${response.referenceId}`, ({ body: status }) => {
+        if (status === 'paid') {
           setStatusPayment('Obaa! Pagamento Realizado.');
           setStyleStatus(classes.textBold);
-          unsubscribe(`/queue/${response.referenceId}`);
+          stompClient.unsubscribe(`/payments/${response.referenceId}`);
         }
       });
     } catch(err) {
@@ -67,20 +75,20 @@ const Payment = ( {setLoading} ) => {
   return (
     <Grid container>
       <Grid item xs={12} sm={12} md={8} lg={8} xl={8}>
-        <Formik 
-          initialValues={{firstName: '', lastName: '', document: '', email: '', phone: '', value: 0.0}} 
-          onSubmit={values => handleSubmit(values)} 
-          validationSchema={validationSchema}> 
+        <Formik
+          initialValues={{firstName: '', lastName: '', document: '', email: '', phone: '', value: 0.0}}
+          onSubmit={values => handleSubmit(values)}
+          validationSchema={validationSchema}>
           { ( {formik, errors, touched} ) => (
             <Form autoComplete="off">
               <Typography variant="h5" style={{padding: '5px'}}>Comprador</Typography>
-              
+
               <Grid container spacing={1} >
                 <Grid item xs={12} sm={12} md={5} lg={5} xl={5}>
                   <Field name="firstName">
-                    { ( {field} ) => (                        
-                        <TextField {...field} label="Nome" margin="normal" fullWidth 
-                          variant="outlined" InputLabelProps={{shrink: true}} 
+                    { ( {field} ) => (
+                        <TextField {...field} label="Nome" margin="normal" fullWidth
+                          variant="outlined" InputLabelProps={{shrink: true}}
                           helperText={touched.firstName && errors.firstName ? errors.firstName : ''} />
                       ) }
                   </Field>
@@ -99,8 +107,8 @@ const Payment = ( {setLoading} ) => {
                 <Grid item xs={12} sm={12} md={3} lg={3} xl={3}>
                   <Field name="document">
                     { ( {field} ) => (
-                        <TextField {...field} label="Documento" margin="normal" fullWidth 
-                          variant="outlined" InputLabelProps={{shrink: true}} 
+                        <TextField {...field} label="Documento" margin="normal" fullWidth
+                          variant="outlined" InputLabelProps={{shrink: true}}
                           helperText={touched.document && errors.document ? errors.document : ''} />
                       ) }
                   </Field>
@@ -111,8 +119,8 @@ const Payment = ( {setLoading} ) => {
                 <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
                   <Field name="email" >
                     { ( {field} ) => (
-                        <TextField {...field} label="E-mail" type="email" margin="normal" fullWidth 
-                          variant="outlined" InputLabelProps={{shrink: true}} 
+                        <TextField {...field} label="E-mail" type="email" margin="normal" fullWidth
+                          variant="outlined" InputLabelProps={{shrink: true}}
                           helperText={touched.email && errors.email ? errors.email : ''} />
                       ) }
                   </Field>
@@ -121,8 +129,8 @@ const Payment = ( {setLoading} ) => {
                 <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
                   <Field name="phone">
                     { ( {field} ) => (
-                        <TextField {...field} label="Telefone" margin="normal" fullWidth variant="outlined" 
-                          InputLabelProps={{shrink: true}} InputProps={{ inputComponent: PhoneField}} 
+                        <TextField {...field} label="Telefone" margin="normal" fullWidth variant="outlined"
+                          InputLabelProps={{shrink: true}} InputProps={{ inputComponent: PhoneField}}
                           helperText={touched.phone && errors.phone ? errors.phone : ''} />
                       ) }
                   </Field>
@@ -131,9 +139,9 @@ const Payment = ( {setLoading} ) => {
                 <Grid item xs={12} sm={12} md={4} lg={4} xl={4} >
                   <Field name="value">
                     { ( {field, form} ) => (
-                        <TextField {...field} id="value" name="value" label="Valor" margin="normal" fullWidth variant="outlined" 
-                          onChange={e => form.setFieldValue('value', e.target.value)} 
-                          InputLabelProps={{shrink: true}} InputProps={{inputComponent: MoneyField }} 
+                        <TextField {...field} id="value" name="value" label="Valor" margin="normal" fullWidth variant="outlined"
+                          onChange={e => form.setFieldValue('value', e.target.value)}
+                          InputLabelProps={{shrink: true}} InputProps={{inputComponent: MoneyField }}
                           helperText={touched.value && errors.value ? errors.value : ''} />
                       ) }
                   </Field>
@@ -145,7 +153,7 @@ const Payment = ( {setLoading} ) => {
               <Box width="100%" display="flex" justifyContent="flex-end" alignItems="center" style={{marginBottom: '10px'}}>
                 <Button type="submit" variant="contained" color="primary" size="large">Gerar Pagamento</Button>
 
-                <Button type="button" variant="contained" color="secondary" size="large" style={{marginLeft: '5px'}} 
+                <Button type="button" variant="contained" color="secondary" size="large" style={{marginLeft: '5px'}}
                   onClick={() => resetBuyer(formik)}>Novo Comprador</Button>
               </Box>
             </Form>
@@ -153,7 +161,7 @@ const Payment = ( {setLoading} ) => {
         }
         </Formik>
       </Grid>
-        
+
       <Grid item xs={12} sm={12} md={4} lg={4} xl={4} className={classes.qrCode} >
         <figure className={classes.figure}>
           <img className={classes.img} src={qrCode} alt="QRCode" title="QRCode"/>

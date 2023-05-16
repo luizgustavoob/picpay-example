@@ -26,7 +26,7 @@ import br.com.luizgustavo.picpaypayment.model.form.StatusChangeForm;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/payment")
+@RequestMapping("/payments")
 public class PaymentController {
 	
 	@Autowired
